@@ -1,0 +1,45 @@
+# .NET build files
+
+# NuGet packages
+*.nupkg
+*.snupkg
+.nuget/
+
+# Visual Studio Code
+.vscode/
+.vscode/*
+.vscode-oss/
+.vscodesettings/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+.idea/*
+
+# MacOS files
+.DS_Store
+
+# Logs
+*.log
+
+# Output directories
+bin/
+obj/
+
+# Docker files
+
+
+# Git folders for Asset Pipeline
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+bin/Debug/

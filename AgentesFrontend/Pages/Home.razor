@@ -1,0 +1,35 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+
+<h3>Simulação de Perseguição Policial</h3>
+<button @onclick="MoverLadrao">Mover Ladrão</button>
+
+@code {
+    private HubConnection? hubConnection;
+    private int ladraoX, ladraoY;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/jogoHub"))
+            .Build();
+
+        hubConnection.On<(int, int)>("AtualizarPosicaoLadrao", posicao =>
+        {
+            ladraoX = posicao.Item1;
+            ladraoY = posicao.Item2;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task MoverLadrao()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.InvokeAsync("MoverLadrao");
+        }
+    }
+}
