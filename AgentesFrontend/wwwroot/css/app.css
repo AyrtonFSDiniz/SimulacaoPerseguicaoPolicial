@@ -101,3 +101,18 @@ a, .btn-link {
 code {
     color: #c02d76;
 }
+
+#mapa {
+    background-color: #f0f0f0;
+    position: relative;
+    margin: 20px auto;
+}
+
+.ator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    font-weight: bold;
+}

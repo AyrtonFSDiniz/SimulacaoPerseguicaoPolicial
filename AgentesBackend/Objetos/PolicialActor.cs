@@ -13,6 +13,8 @@ public class PolicialActor : ReceiveActor
             else if (mensagem == "reforço")
             {
                 Console.WriteLine("O policial chamou reforço!");
+            }else{
+                Console.WriteLine($"Mensagem não reconhecida: {mensagem}");
             }
         });
     }

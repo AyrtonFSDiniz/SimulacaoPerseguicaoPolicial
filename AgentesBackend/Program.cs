@@ -1,5 +1,6 @@
 
 using Akka.Actor;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,13 +14,32 @@ builder.Services.AddSingleton(system);
 builder.Services.AddSingleton<IActorRef>(ladraoActor);
 builder.Services.AddSingleton<IActorRef>(policialActor);
 
+var supervisor = system.ActorOf(Props.Create<SupervisorActor>(), "supervisor");
+builder.Services.AddSingleton<IActorRef>(supervisor);
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", builder =>
+    {
+        builder.WithOrigins("http://localhost:5172")
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("CorsPolicy");
 
 app.UseRouting();
 
-app.UseEndpoints(endpoints =>
+app.MapHub<JogoHub>("/jogoHub", options =>
 {
-    endpoints.MapHub<JogoHub>("/jogoHub");
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
+                         Microsoft.AspNetCore.Http.Connections.HttpTransportType.ServerSentEvents;
 });
+
 
 app.Run();
