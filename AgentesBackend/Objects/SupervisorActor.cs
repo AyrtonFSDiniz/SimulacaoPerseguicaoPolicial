@@ -14,8 +14,7 @@ public class SupervisorActor : ReceiveActor
 
     public SupervisorActor()
     {
-        // Timer para movimentação automática
-        _timer = new System.Timers.Timer(_tempoDeMovimentacao); // Movimenta a cada 1 segundo
+        _timer = new System.Timers.Timer(_tempoDeMovimentacao);
         _timer.Elapsed += (_, _) => MoverAutomatico();
         _timer.Start();
 
@@ -95,25 +94,22 @@ public class SupervisorActor : ReceiveActor
                 {
                     ConsoleLog.Log($"⚠️ {nomePolicial} avistou {nomeLadrao}! Iniciando modo fuga.");
 
-                    // Inicia modo fuga
                     MostrarFugaLog(nomeLadrao, xL, yL, nomePolicial, xP, yP);
 
 
-                    if (xL == xP && yL == yP) // Verifica se estão na mesma posição
+                    if (xL == xP && yL == yP)
                     {
                         ConsoleLog.Log($"🚔 {nomePolicial} capturou {nomeLadrao}!");
 
                         // Evento de captura
-                        _posicoes.Remove(nomeLadrao); // Remove o ladrão da lista de posições
-                        _atores.Remove(nomeLadrao);  // Remove o ladrão do sistema de atores
+                        _posicoes.Remove(nomeLadrao);
+                        _atores.Remove(nomeLadrao);
 
-                        Context.Stop(_atores[nomeLadrao]); // Para o ator ladrão
-                        _atores.Remove(nomePolicial); // Remove o policial do sistema de atores
+                        Context.Stop(_atores[nomeLadrao]);
+                        _atores.Remove(nomePolicial);
 
-                        Context.Stop(_atores[nomePolicial]); // Para o ator policial
-                        ConsoleLog.Log($"🚔 {nomePolicial} capturou {nomeLadrao}!")
-                        
-                        ;
+                        Context.Stop(_atores[nomePolicial]);
+                        ConsoleLog.Log($"🚔 {nomePolicial} capturou {nomeLadrao}!");
                     }
 
                 }
