@@ -1,4 +1,3 @@
-using System.Timers;
 using Akka.Actor;
 
 public class SupervisorActor : ReceiveActor
@@ -10,11 +9,13 @@ public class SupervisorActor : ReceiveActor
     private readonly Random _random = new Random();
     private readonly int _raioDeVisao = 5; // Campo de visão em unidades
     private readonly System.Timers.Timer _timer;
+    private readonly int _tempoDeMovimentacao = 3000; // Tempo de movimentação em milissegundos
+
 
     public SupervisorActor()
     {
         // Timer para movimentação automática
-        _timer = new System.Timers.Timer(1000); // Movimenta a cada 1 segundo
+        _timer = new System.Timers.Timer(_tempoDeMovimentacao); // Movimenta a cada 1 segundo
         _timer.Elapsed += (_, _) => MoverAutomatico();
         _timer.Start();
 
@@ -41,13 +42,13 @@ public class SupervisorActor : ReceiveActor
                 var nome = msg.Split(':')[1];
                 if (_atores.TryGetValue(nome, out var ator))
                 {
-                    Console.WriteLine($"Movendo ator: {nome}");
+                    ConsoleLog.Log($"Movendo ator: {nome}");
                     ator.Ask<(int, int)>("mover")
                         .PipeTo(Sender);
                 }
                 else
                 {
-                    Console.WriteLine($"Ator {nome} não encontrado.");
+                    ConsoleLog.Log($"Ator {nome} não encontrado.");
                     throw new Exception($"Ator {nome} não encontrado.");
                 }
             }
@@ -57,13 +58,15 @@ public class SupervisorActor : ReceiveActor
             }
             else
             {
-                Console.WriteLine($"Mensagem não reconhecida: {msg}");
+                ConsoleLog.Log($"Mensagem não reconhecida: {msg}");
             }
         });
     }
 
+    
     private void MoverAutomatico()
     {
+        
         foreach (var nome in _posicoes.Keys.ToList())
         {
             var (x, y) = _posicoes[nome];
@@ -90,13 +93,40 @@ public class SupervisorActor : ReceiveActor
                 var distancia = Math.Sqrt(Math.Pow(xP - xL, 2) + Math.Pow(yP - yL, 2));
                 if (distancia <= _raioDeVisao)
                 {
-                    Console.WriteLine($"⚠️ {nomePolicial} avistou {nomeLadrao}! Iniciando modo fuga.");
+                    ConsoleLog.Log($"⚠️ {nomePolicial} avistou {nomeLadrao}! Iniciando modo fuga.");
 
                     // Inicia modo fuga
-                    _posicoes[nomePolicial] = (xP + Math.Sign(xL - xP), yP + Math.Sign(yL - yP));
-                    _posicoes[nomeLadrao] = (xL - Math.Sign(xL - xP), yL - Math.Sign(yL - yP));
+                    MostrarFugaLog(nomeLadrao, xL, yL, nomePolicial, xP, yP);
+
+
+                    if (xL == xP && yL == yP) // Verifica se estão na mesma posição
+                    {
+                        ConsoleLog.Log($"🚔 {nomePolicial} capturou {nomeLadrao}!");
+
+                        // Evento de captura
+                        _posicoes.Remove(nomeLadrao); // Remove o ladrão da lista de posições
+                        _atores.Remove(nomeLadrao);  // Remove o ladrão do sistema de atores
+
+                        Context.Stop(_atores[nomeLadrao]); // Para o ator ladrão
+                        _atores.Remove(nomePolicial); // Remove o policial do sistema de atores
+
+                        Context.Stop(_atores[nomePolicial]); // Para o ator policial
+                        ConsoleLog.Log($"🚔 {nomePolicial} capturou {nomeLadrao}!")
+                        
+                        ;
+                    }
+
                 }
             }
         }
+    }
+
+    private void MostrarFugaLog(string nomeLadrao, int xL, int yL, string nomePolicial, int xP, int yP)
+    {
+        _posicoes[nomePolicial] = (xP + Math.Sign(xL - xP), yP + Math.Sign(yL - yP));
+        ConsoleLog.Log($"🚓 {nomePolicial} se move para ({_posicoes[nomePolicial].X}, {_posicoes[nomePolicial].Y})");
+
+        _posicoes[nomeLadrao] = (xL - Math.Sign(xL - xP), yL - Math.Sign(yL - yP));
+        ConsoleLog.Log($"🏃 {nomeLadrao} se move para ({_posicoes[nomeLadrao].X}, {_posicoes[nomeLadrao].Y})");
     }
 }

@@ -8,13 +8,13 @@ public class PolicialActor : ReceiveActor
         {
             if (mensagem == "perseguir")
             {
-                Console.WriteLine("O policial está perseguindo o ladrão!");
+                ConsoleLog.Log("O policial está perseguindo o ladrão!");
             }
             else if (mensagem == "reforço")
             {
-                Console.WriteLine("O policial chamou reforço!");
+                ConsoleLog.Log("O policial chamou reforço!");
             }else{
-                Console.WriteLine($"Mensagem não reconhecida: {mensagem}");
+                ConsoleLog.Log($"Mensagem não reconhecida: {mensagem}");
             }
         });
     }

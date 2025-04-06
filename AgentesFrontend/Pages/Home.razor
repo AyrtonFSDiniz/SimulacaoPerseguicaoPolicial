@@ -30,8 +30,8 @@
                  height: 20px;
                  border-radius: 50%;
                  background-color: @(ator.Key.StartsWith("ladrao") ? "red" : "blue");
-                 left: @(ator.Value.X * 50 - 10)px;
-                 top: @(ator.Value.Y * 50 - 10)px;
+                 left: @(Math.Clamp(ator.Value.X * 50 - 10, 0, 480))px;
+                 top: @(Math.Clamp(ator.Value.Y * 50 - 10, 0, 480))px;
              "
              title="@ator.Key">
         </div>
@@ -57,6 +57,7 @@
         hubConnection.On<string, (int X, int Y)>("AtualizarPosicao", (nome, posicao) =>
         {
             atoresPosicoes[nome] = posicao;
+            Console.WriteLine($"Ator atualizado: {nome}, Nova posição: {posicao}");
             StateHasChanged(); // Força a re-renderização do mapa
         });
 
@@ -98,5 +99,19 @@
         {
             await hubConnection.InvokeAsync("AtualizarPosicoes");
         }
+
+        hubConnection!.On<string, (int X, int Y)>("AtualizarPosicao", (nome, posicao) =>
+        {
+            if (!atoresPosicoes.ContainsKey(nome))
+            {
+                atoresPosicoes[nome] = posicao; // Adiciona novo ator, se necessário
+            }
+            else
+            {
+                atoresPosicoes[nome] = posicao; // Atualiza posição existente
+            }
+
+            StateHasChanged(); // Re-renderiza o mapa com as novas posições
+        });
     }
 }
