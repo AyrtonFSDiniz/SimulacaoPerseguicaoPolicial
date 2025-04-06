@@ -1,15 +1,19 @@
 ﻿@inherits LayoutComponentBase
 <div class="page">
-    <div class="sidebar">
+    <!-- <div class="sidebar">
         <NavMenu />
-    </div>
+    </div> -->
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        <header class="py-3 mb-4 border-bottom background" style='background-image: linear-gradient(90deg, rgb(5, 39, 103) 0%, #3a0647 70%);'>
+            <div class="container d-flex flex-wrap justify-content-center">
+                <a href="/" class="d-flex align-items-center mb-3 text-dark text-decoration-none">
+                    <span class="fs-4 text-white">Simulação de Perseguição Policial</span>
+                </a>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <article class="content px-4 bg-light-subtle">
             @Body
         </article>
     </main>

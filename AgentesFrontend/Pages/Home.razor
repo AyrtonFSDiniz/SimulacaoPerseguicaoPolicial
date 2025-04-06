@@ -1,33 +1,35 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager Navigation
+<section class="d-flex flex-column align-items-center text-center">
+    <h3>Simulação de Perseguição Policial</h3>
 
-<h3>Simulação de Perseguição Policial</h3>
+    <div class="d-flex flex-column gap-3 mb-3">
+        <div>
+            <label for="qtdLadroes">Ladrões:</label>
+            <input type="number" id="qtdLadroes" @bind="quantidadeLadroes" min="1" class="form-control d-inline-block w-auto mx-2" />
+            <button @onclick="CriarLadroes" class="btn btn-primary">Criar Ladrões</button>
+        </div>
 
-<div>
-    <label for="qtdLadroes">Ladrões:</label>
-    <input type="number" id="qtdLadroes" @bind="quantidadeLadroes" min="1" />
-    <button @onclick="CriarLadroes">Criar Ladrões</button>
-</div>
+        <div>
+            <label for="qtdPoliciais">Policiais:</label>
+            <input type="number" id="qtdPoliciais" @bind="quantidadePoliciais" min="1" class="form-control d-inline-block w-auto mx-2" />
+            <button @onclick="CriarPoliciais" class="btn btn-danger">Criar Policiais</button>
+        </div>
+    </div>
 
-<div>
-    <label for="qtdPoliciais">Policiais:</label>
-    <input type="number" id="qtdPoliciais" @bind="quantidadePoliciais" min="1" />
-    <button @onclick="CriarPoliciais">Criar Policiais</button>
-</div>
-
-<button @onclick="AtualizarPosicoes">Atualizar Posições</button>
+    <button @onclick="AtualizarPosicoes" class="btn btn-warning">Atualizar Posições</button>
+</section>
 
 <div id="mapa" style="position: relative; width: 500px; height: 500px; border: 1px solid black;">
     @foreach (var ator in atoresPosicoes)
     {
-        <div class="ator"
+        <div class="ator @(ator.Key.StartsWith("ladrao") ? "bg-danger" : "bg-primary")"
              style="
                  position: absolute;
                  width: 20px;
                  height: 20px;
                  border-radius: 50%;
-                 background-color: @(ator.Key.StartsWith("ladrao") ? "red" : "blue");
                  left: @(Math.Clamp(ator.Value.X * 50 - 10, 0, 480))px;
                  top: @(Math.Clamp(ator.Value.Y * 50 - 10, 0, 480))px;
              "
