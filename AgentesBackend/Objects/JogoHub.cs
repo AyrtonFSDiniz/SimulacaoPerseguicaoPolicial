@@ -1,6 +1,13 @@
 using Akka.Actor;
 using Microsoft.AspNetCore.SignalR;
 
+public class Posicao
+{
+    public int X { get; set; }
+
+    public int Y { get; set; }
+}
+
 public class JogoHub : Hub
 {
     private readonly IActorRef _supervisor;
@@ -15,6 +22,8 @@ public class JogoHub : Hub
         var nomeLadrao = await _supervisor.Ask<string>("criarLadrao");
         ConsoleLog.Log($"Ladrão criado: {nomeLadrao}");
         await Clients.All.SendAsync("LadraoCriado", nomeLadrao);
+        await AtualizarPosicoes();
+
     }
 
     public async Task CriarPolicial()
@@ -22,6 +31,7 @@ public class JogoHub : Hub
         var nomePolicial = await _supervisor.Ask<string>("criarPolicial");
         ConsoleLog.Log($"Policial criado: {nomePolicial}");
         await Clients.All.SendAsync("PolicialCriado", nomePolicial);
+        await AtualizarPosicoes();
     }
 
     public async Task AtualizarPosicoes()
@@ -35,7 +45,7 @@ public class JogoHub : Hub
             foreach (var (nome, posicao) in posicoes)
             {
                 ConsoleLog.Log($"Ator: {nome}, Posição: {posicao}");
-                await Clients.All.SendAsync("AtualizarPosicao", nome, posicao);
+                await Clients.All.SendAsync("AtualizarPosicao", nome, new Posicao() { X = posicao.X, Y = posicao.Y});
             }
         }
         catch (Exception ex)
