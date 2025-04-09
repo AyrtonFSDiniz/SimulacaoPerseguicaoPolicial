@@ -105,15 +105,7 @@
 
         hubConnection!.On<string, (int X, int Y)>("AtualizarPosicao", (nome, posicao) =>
         {
-            if (!atoresPosicoes.ContainsKey(nome))
-            {
-                atoresPosicoes[nome] = posicao;
-            }
-            else
-            {
-                atoresPosicoes[nome] = posicao;
-            }
-
+            atoresPosicoes[nome] = posicao;
             StateHasChanged();
         });
     }
