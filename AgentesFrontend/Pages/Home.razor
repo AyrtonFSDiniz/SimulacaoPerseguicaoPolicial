@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
 @inject NavigationManager Navigation
 
 <h3>Simulação de Perseguição Policial</h3>
@@ -51,11 +52,13 @@
             .WithUrl(Navigation.ToAbsoluteUri("http://localhost:5185/jogoHub"))
             .Build();
 
-        hubConnection.On<string, (int X, int Y)>("AtualizarPosicao", (nome, posicao) =>
+        hubConnection.On<string, dynamic>("AtualizarPosicao", (nome, posicao) =>
         {
-            atoresPosicoes[nome] = posicao;
+            JsonElement json = (JsonElement)posicao;
+            int x = json.GetProperty("x").GetInt32();
+            int y = json.GetProperty("y").GetInt32();
+            atoresPosicoes[nome] = (x, y);
             Console.WriteLine($"Ator atualizado: {nome}, Nova posição: {posicao}");
-            StateHasChanged();
         });
 
         hubConnection.On<string, string>("ModoFugaIniciado", (nomeLadrao, nomePolicial) =>
@@ -75,6 +78,7 @@
             {
                 await hubConnection.InvokeAsync("CriarLadrao");
             }
+            StateHasChanged();
         }
     }
 
@@ -86,6 +90,7 @@
             {
                 await hubConnection.InvokeAsync("CriarPolicial");
             }
+            StateHasChanged();
         }
     }
 

@@ -4,6 +4,8 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentesBackend", "AgentesBackend\AgentesBackend.csproj", "{8922E2B2-4D64-803C-2AD0-593B918D9D13}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentesFrontend", "AgentesFrontend\AgentesFrontend.csproj", "{57BE4BFC-361D-D10C-6D74-CF1A60774B0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +16,10 @@ Global
 		{8922E2B2-4D64-803C-2AD0-593B918D9D13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8922E2B2-4D64-803C-2AD0-593B918D9D13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8922E2B2-4D64-803C-2AD0-593B918D9D13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57BE4BFC-361D-D10C-6D74-CF1A60774B0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57BE4BFC-361D-D10C-6D74-CF1A60774B0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57BE4BFC-361D-D10C-6D74-CF1A60774B0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57BE4BFC-361D-D10C-6D74-CF1A60774B0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
