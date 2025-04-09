@@ -9,13 +9,13 @@
         <div>
             <label for="qtdLadroes">Ladrões:</label>
             <input type="number" id="qtdLadroes" @bind="quantidadeLadroes" min="1" class="form-control d-inline-block w-auto mx-2" />
-            <button @onclick="CriarLadroes" class="btn btn-primary">Criar Ladrões</button>
+            <button @onclick="CriarLadroes" class="btn btn-danger">Criar Ladrões</button>
         </div>
 
         <div>
             <label for="qtdPoliciais">Policiais:</label>
             <input type="number" id="qtdPoliciais" @bind="quantidadePoliciais" min="1" class="form-control d-inline-block w-auto mx-2" />
-            <button @onclick="CriarPoliciais" class="btn btn-danger">Criar Policiais</button>
+            <button @onclick="CriarPoliciais" class="btn btn-primary">Criar Policiais</button>
         </div>
     </div>
 
