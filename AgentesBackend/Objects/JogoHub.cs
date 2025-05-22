@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.SignalR;
 public class Posicao
 {
     public int X { get; set; }
-
     public int Y { get; set; }
 }
 
@@ -12,9 +11,9 @@ public class JogoHub : Hub
 {
     private readonly IActorRef _supervisor;
 
-    public JogoHub(IActorRef supervisor)
+    public JogoHub(SupervisorRef supervisor)
     {
-        _supervisor = supervisor;
+        _supervisor = supervisor.Ref;
     }
 
     public async Task CriarLadrao()
@@ -23,7 +22,6 @@ public class JogoHub : Hub
         ConsoleLog.Log($"Ladrão criado: {nomeLadrao}");
         await Clients.All.SendAsync("LadraoCriado", nomeLadrao);
         await AtualizarPosicoes();
-
     }
 
     public async Task CriarPolicial()
@@ -38,15 +36,15 @@ public class JogoHub : Hub
     {
         try
         {
-            // Solicita as posições de todos os atores ao supervisor
             var posicoes = await _supervisor.Ask<Dictionary<string, (int X, int Y)>>("obterPosicoes");
             ConsoleLog.Log("Atualizando posições dos atores.");
 
-            foreach (var (nome, posicao) in posicoes)
-            {
-                ConsoleLog.Log($"Ator: {nome}, Posição: {posicao}");
-                await Clients.All.SendAsync("AtualizarPosicao", nome, new Posicao() { X = posicao.X, Y = posicao.Y});
-            }
+            // Use Task.WhenAll para executar em paralelo as notificações
+            var tasks = posicoes.Select(kvp =>
+                Clients.All.SendAsync("AtualizarPosicao", kvp.Key, new Posicao { X = kvp.Value.X, Y = kvp.Value.Y })
+            );
+
+            await Task.WhenAll(tasks);
         }
         catch (Exception ex)
         {
@@ -57,15 +55,14 @@ public class JogoHub : Hub
     public async Task MoverLadrao(string nomeLadrao)
     {
         if (string.IsNullOrWhiteSpace(nomeLadrao))
-        {
             throw new ArgumentException("O nome do ladrão não pode ser vazio ou nulo.");
-        }
 
         try
         {
-            // Envie uma mensagem ao supervisor para mover um ladrão específico
-            var posicao = await _supervisor.Ask<(int, int)>($"mover:{nomeLadrao}");
-            ConsoleLog.Log($"Ladrão {nomeLadrao} movido para a posição: {posicao}");
+            var posicaoTuple = await _supervisor.Ask<(int, int)>($"mover:{nomeLadrao}");
+            var posicao = new Posicao { X = posicaoTuple.Item1, Y = posicaoTuple.Item2 };
+
+            ConsoleLog.Log($"Ladrão {nomeLadrao} movido para a posição: ({posicao.X},{posicao.Y})");
             await Clients.All.SendAsync("AtualizarPosicaoLadrao", nomeLadrao, posicao);
         }
         catch (Exception ex)
@@ -78,15 +75,14 @@ public class JogoHub : Hub
     public async Task MoverPolicial(string nomePolicial)
     {
         if (string.IsNullOrWhiteSpace(nomePolicial))
-        {
             throw new ArgumentException("O nome do policial não pode ser vazio ou nulo.");
-        }
 
         try
         {
-            // Envie uma mensagem ao supervisor para mover um policial específico
-            var posicao = await _supervisor.Ask<(int, int)>($"mover:{nomePolicial}");
-            ConsoleLog.Log($"Policial {nomePolicial} movido para a posição: {posicao}");
+            var posicaoTuple = await _supervisor.Ask<(int, int)>($"mover:{nomePolicial}");
+            var posicao = new Posicao { X = posicaoTuple.Item1, Y = posicaoTuple.Item2 };
+
+            ConsoleLog.Log($"Policial {nomePolicial} movido para a posição: ({posicao.X},{posicao.Y})");
             await Clients.All.SendAsync("AtualizarPosicaoPolicial", nomePolicial, posicao);
         }
         catch (Exception ex)
@@ -104,7 +100,6 @@ public class JogoHub : Hub
 
     public async Task Perseguir(string nomePolicial)
     {
-        // Envie uma mensagem ao supervisor para que um policial específico comece a perseguir
         _supervisor.Tell($"perseguir:{nomePolicial}");
         ConsoleLog.Log($"Policial {nomePolicial} está perseguindo.");
         await Clients.All.SendAsync("PolicialPerseguindo", nomePolicial);
@@ -114,5 +109,4 @@ public class JogoHub : Hub
     {
         await Clients.All.SendAsync("LadraoCapturado", nomeLadrao, nomePolicial);
     }
-
 }

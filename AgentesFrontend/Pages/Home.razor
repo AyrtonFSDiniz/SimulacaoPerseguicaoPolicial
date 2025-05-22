@@ -1,25 +1,67 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
-@using System.Text.Json
 @inject NavigationManager Navigation
+
 <section class="d-flex flex-column align-items-center text-center">
     <h3>Simulação de Perseguição Policial</h3>
+
+    @if (hubConnection?.State != HubConnectionState.Connected)
+    {
+        <p class="text-muted">🔌 Conectando ao servidor...</p>
+    }
+
+    <h4 class="mt-4">🎮 Painel de Controle</h4>
+
+<table class="table table-sm table-bordered w-auto mx-auto">
+    <thead class="table-light">
+        <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Posição</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ator in atoresPosicoes)
+        {
+            var tipo = ator.Key.StartsWith("ladrao") ? "Ladrão" : "Policial";
+            <tr>
+                <td>@ator.Key</td>
+                <td>@tipo</td>
+                <td>(@ator.Value.X, @ator.Value.Y)</td>
+                <td>
+                    @if (tipo == "Ladrão")
+                    {
+                        <button class="btn btn-sm btn-danger me-1" @onclick="() => MoverLadrao(ator.Key)">Mover</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-primary me-1" @onclick="() => MoverPolicial(ator.Key)">Mover</button>
+                        <button class="btn btn-sm btn-warning me-1" @onclick="() => IniciarPerseguicao(ator.Key)">Perseguir</button>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => ChamarReforco(ator.Key)">Reforço</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
 
     <div class="d-flex flex-column gap-3 mb-3">
         <div>
             <label for="qtdLadroes">Ladrões:</label>
             <input type="number" id="qtdLadroes" @bind="quantidadeLadroes" min="1" class="form-control d-inline-block w-auto mx-2" />
-            <button @onclick="CriarLadroes" class="btn btn-danger">Criar Ladrões</button>
+            <button @onclick="CriarLadroes" class="btn btn-danger" disabled="@(!Conectado)">Criar Ladrões</button>
         </div>
 
         <div>
             <label for="qtdPoliciais">Policiais:</label>
             <input type="number" id="qtdPoliciais" @bind="quantidadePoliciais" min="1" class="form-control d-inline-block w-auto mx-2" />
-            <button @onclick="CriarPoliciais" class="btn btn-primary">Criar Policiais</button>
+            <button @onclick="CriarPoliciais" class="btn btn-primary" disabled="@(!Conectado)">Criar Policiais</button>
         </div>
     </div>
 
-    <button @onclick="AtualizarPosicoes" class="btn btn-warning">Atualizar Posições</button>
+    <button @onclick="AtualizarPosicoes" class="btn btn-warning" disabled="@(!Conectado)">Atualizar Posições</button>
 </section>
 
 <div id="mapa" style="position: relative; width: 500px; height: 500px; border: 1px solid black;">
@@ -47,66 +89,180 @@
     private int quantidadePoliciais = 1;
     private Dictionary<string, (int X, int Y)> atoresPosicoes = new();
     private string modoFugaMensagem = string.Empty;
+    private bool Conectado => hubConnection?.State == HubConnectionState.Connected;
+    private System.Timers.Timer? timerAtualizarPosicoes;
+
+    public class Posicao
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        timerAtualizarPosicoes = new System.Timers.Timer(2000);
+    timerAtualizarPosicoes.Elapsed += async (_, _) =>
+    {
+        if (Conectado)
+        {
+            try
+            {
+                await hubConnection.InvokeAsync("AtualizarPosicoes");
+            }
+            catch
+            {
+                // tratar erro se quiser
+            }
+        }
+    };
+    timerAtualizarPosicoes.AutoReset = true;
+    timerAtualizarPosicoes.Start();
+
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("http://localhost:5185/jogoHub"))
+            .WithAutomaticReconnect()
             .Build();
 
-        hubConnection.On<string, dynamic>("AtualizarPosicao", (nome, posicao) =>
+        hubConnection.Closed += async (error) =>
         {
-            JsonElement json = (JsonElement)posicao;
-            int x = json.GetProperty("x").GetInt32();
-            int y = json.GetProperty("y").GetInt32();
-            atoresPosicoes[nome] = (x, y);
-            Console.WriteLine($"Ator atualizado: {nome}, Nova posição: {posicao}");
+            Console.WriteLine("🔌 Conexão encerrada.");
+            await Task.Delay(2000);
+            await hubConnection.StartAsync();
+            StateHasChanged();
+        };
+
+        hubConnection.Reconnected += connectionId =>
+        {
+            Console.WriteLine("✅ Reconectado ao servidor.");
+            StateHasChanged();
+            return Task.CompletedTask;
+        };
+
+        hubConnection.Reconnecting += error =>
+        {
+            Console.WriteLine("♻️ Tentando reconectar...");
+            StateHasChanged();
+            return Task.CompletedTask;
+        };
+
+        hubConnection.On<string, Posicao>("AtualizarPosicao", (nome, posicao) =>
+        {
+            atoresPosicoes[nome] = (posicao.X, posicao.Y);
+            Console.WriteLine($"Ator: {nome} - Posições: X: {posicao.X}, Y: {posicao.Y}");
+            
+            InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On<string, string>("ModoFugaIniciado", (nomeLadrao, nomePolicial) =>
         {
             modoFugaMensagem = $"⚠️ Modo fuga iniciado! Ladrão: {nomeLadrao}, Policial: {nomePolicial}";
-            StateHasChanged();
+            InvokeAsync(StateHasChanged);
         });
 
-        await hubConnection.StartAsync();
+        hubConnection.On<List<dynamic>>("AtualizarTodasPosicoes", (posicoesFormatadas) =>
+{
+    foreach (var p in posicoesFormatadas)
+    {
+        string nome = p.Id;
+        int x = p.X;
+        int y = p.Y;
+        atoresPosicoes[nome] = (x, y);
+    }
+    InvokeAsync(StateHasChanged);
+});
+
+
+hubConnection.On<string>("LadraoCapturado", (nomeLadrao) =>
+{
+     Console.WriteLine($"🚨 Ladrão capturado: {nomeLadrao}");
+});
+
+hubConnection.On<string>("AtorCriado", (nomeAtor) =>
+{
+     Console.WriteLine($"✨ Novo ator criado: {nomeAtor}");
+});
+
+
+        try
+        {
+            await hubConnection.StartAsync();
+            Console.WriteLine("🚀 Conectado ao servidor.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao conectar ao SignalR: {ex.Message}");
+        }
+
+        StateHasChanged();
     }
 
     private async Task CriarLadroes()
     {
-        if (hubConnection is not null)
+        if (Conectado)
         {
             for (int i = 0; i < quantidadeLadroes; i++)
             {
-                await hubConnection.InvokeAsync("CriarLadrao");
+                await hubConnection!.InvokeAsync("CriarLadrao");
             }
-            StateHasChanged();
         }
     }
 
     private async Task CriarPoliciais()
     {
-        if (hubConnection is not null)
+        if (Conectado)
         {
             for (int i = 0; i < quantidadePoliciais; i++)
             {
-                await hubConnection.InvokeAsync("CriarPolicial");
+                await hubConnection!.InvokeAsync("CriarPolicial");
             }
-            StateHasChanged();
         }
     }
 
     private async Task AtualizarPosicoes()
     {
-        if (hubConnection is not null)
+        if (Conectado)
         {
-            await hubConnection.InvokeAsync("AtualizarPosicoes");
+            await hubConnection!.InvokeAsync("AtualizarPosicoes");
         }
-
-        hubConnection!.On<string, (int X, int Y)>("AtualizarPosicao", (nome, posicao) =>
-        {
-            atoresPosicoes[nome] = posicao;
-            StateHasChanged();
-        });
     }
+
+    private async Task MoverLadrao(string nome)
+{
+    if (Conectado)
+    {
+        await hubConnection!.InvokeAsync("MoverLadrao", nome);
+    }
+}
+
+private async Task MoverPolicial(string nome)
+{
+    if (Conectado)
+    {
+        await hubConnection!.InvokeAsync("MoverPolicial", nome);
+    }
+}
+
+private async Task IniciarPerseguicao(string nomePolicial)
+{
+    if (Conectado)
+    {
+        await hubConnection!.InvokeAsync("Perseguir", nomePolicial);
+    }
+}
+
+private async Task ChamarReforco(string nomePolicial)
+{
+    if (Conectado)
+    {
+        await hubConnection!.InvokeAsync("ChamarReforco", nomePolicial);
+    }
+}
+
+public void Dispose()
+{
+    timerAtualizarPosicoes?.Stop();
+    timerAtualizarPosicoes?.Dispose();
+}
+
+
 }
